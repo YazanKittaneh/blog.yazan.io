@@ -7,7 +7,7 @@ export default function Page() {
         Yazan's ramblings
       </h1>
       <p className="mb-4">
-        {`Welcome to the blog part of my site! It's a seperate app from my dashboard since static and dynamic routes in Next.js were harder to get properly working than it was worth. Vercel, please fix.  `}
+        {`My wife works in marketing. She told me I have to have a blog. Something about SEO and organic reach. So here it is. Had to park it on a seperate CNAME because of Next.js though. Wife wrote them an email asking them to “please fix”. Here’s hoping. `}
       </p>
       <div className="my-8">
         <BlogPosts />
