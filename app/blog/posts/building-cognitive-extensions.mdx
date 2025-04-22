@@ -1,0 +1,143 @@
+
+---
+title: 'Building Cognitive Extensions'
+publishedAt: '2023-06-30'
+summary: 'Understanding Vector Databases and creating Smarter Memory.'
+---
+
+
+# **Building Your Own AI Memory System: A Practical Guide to Chroma DB Chatbots**
+
+## **Understanding Vector Databases: The Foundation of Smarter Search**
+
+When we ask Google a question, it doesn't just look for exact matches to our words—it understands what we mean. This same powerful capability is now available for your personal projects through vector databases like Chroma DB.
+
+> **Vector Databases**: Systems that store information as mathematical representations of meaning, allowing computers to find content based on concepts rather than just matching exact words.
+
+Think of traditional databases as filing cabinets organized alphabetically—you can only find something if you know its exact name. Vector databases are more like having a librarian who understands your needs, even when your description is imperfect.
+
+Chroma DB brings this technology to your local computer—similar to how SQLite gives you a personal database without needing servers or complex setup.
+
+## **Why Embedding Models Matter**
+
+The magic behind semantic search lies in "embeddings"—mathematical representations of language that capture meaning:
+
+```
+"I'm feeling happy" → [0.12, -0.44, 0.87, ...] 
+"I'm feeling joyful" → [0.15, -0.41, 0.82, ...]
+"I'm feeling sad"    → [-0.55, 0.21, -0.60, ...]
+```
+
+Notice how the numbers for "happy" and "joyful" are similar, while "sad" has very different values—the system understands these relationships without being explicitly taught each word.
+
+## **The Two-Part Memory System**
+
+The chatbot implementation uses a thoughtfully designed dual-memory approach that mirrors how our own minds work:
+
+**Knowledge Base Articles** store factual information and insights—similar to how we remember concepts and learned information.
+
+**User Profiles** maintain personal context and conversation history—like how we remember our ongoing relationships and conversations.
+
+This separation creates a system that can both remember facts and understand your personal context—a critical distinction that makes interactions feel more natural and continuous.
+
+## **Building Your Own Memory-Enhanced Chatbot**
+
+Let's walk through implementing this system step by step:
+
+### **1. Setting Up Your Environment**
+
+First, install the necessary packages:
+
+```python
+# Install required libraries
+pip install chromadb openai pyyaml
+```
+
+### **2. Creating Basic File Handling Functions**
+
+These utility functions help manage data storage:
+
+```python
+def save_yaml(data, filepath):
+    """Save structured data to a YAML file for easy reading later"""
+    with open(filepath, 'w') as file:
+        yaml.dump(data, file)
+
+def open_file(filepath):
+    """Read content from a file with proper text encoding"""
+    with open(filepath, 'r', encoding='utf-8') as file:
+        return file.read()
+```
+
+### **3. Connecting to the Language Model**
+
+This function handles communication with GPT-4 (or GPT-3.5 if you prefer):
+
+```python
+def chatbot(messages, model="gpt-4"):
+    """Send messages to the AI model and get a response
+    
+    Setting temperature=0 makes responses more consistent,
+    which is important when updating memory systems
+    """
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=0  # More predictable responses
+    )
+    # Save the conversation for future reference
+    save_yaml(messages + [{"role": "assistant", "content": response.choices[0].message.content}], 
+             f"api_logs/convo_{time.time()}.yaml")
+    return response.choices[0].message.content
+```
+
+The temperature setting is particularly important—zero temperature creates predictable, consistent responses, which helps when you're extracting information to update your memory systems.
+
+### **4. Setting Up Your Vector Database**
+
+Now we create our Chroma DB collections:
+
+```python
+import chromadb
+
+# Create a database that saves to disk
+client = chromadb.PersistentClient("./chroma_db")
+
+# Create two collections: one for knowledge and one for user information
+kb_collection = client.get_or_create_collection(
+    name="knowledge_base",
+    embedding_function=chromadb.embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="all-MiniLM-L6-v2"
+    )
+)
+
+profile_collection = client.get_or_create_collection(
+    name="user_profiles",
+    embedding_function=chromadb.embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="all-MiniLM-L6-v2"
+    )
+)
+```
+
+### **5. Creating Memory Update Functions**
+
+This function extracts and stores important information from conversations:
+
+```python
+def update_knowledge_base(conversation, user_id="default_user"):
+    """Extract key information from conversations and save it for future reference"""
+    # Ask the AI to identify important information worth remembering
+    extraction_prompt = [
+        {"role": "system", "content": "Extract key information from this conversation that would be valuable for future reference."},
+        {"role": "user", "content": str(conversation)}
+    ]
+    extracted_info = chatbot(extraction_prompt)
+    
+    # Store this information in the vector database with identifying metadata
+    kb_collection.add(
+        documents=[extracted_info],
+        metadatas=[{"user_id": user_id, "timestamp": time.time()}],
+        ids=[f"kb_{uuid.uuid4()}"]
+    )
+```
+
