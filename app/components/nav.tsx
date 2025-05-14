@@ -4,6 +4,13 @@ const navItems = {
   '/': {
     name: 'home',
   },
+  '/blog': {
+    name: 'blog',
+  },
+  '/prompt': {
+    name: 'prompts',
+  },
+
 }
 
 export function Navbar() {
@@ -27,6 +34,7 @@ export function Navbar() {
               )
             })}
           </div>
+          
         </nav>
       </div>
     </aside>

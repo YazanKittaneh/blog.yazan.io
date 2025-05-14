@@ -1,4 +1,4 @@
-import { BlogPosts } from 'app/components/posts'
+import { BlogPosts, PromptPosts } from 'app/components/posts'
 
 export default function Page() {
   return (
@@ -11,6 +11,8 @@ export default function Page() {
       </p>
       <div className="my-8">
         <BlogPosts />
+        <PromptPosts />
+
       </div>
     </section>
   )
