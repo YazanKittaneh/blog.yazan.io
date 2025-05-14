@@ -20,6 +20,8 @@
     "next": "14.2.0-canary.62",
     "next-mdx-remote": "^4.4.1",
     "postcss": "^8.4.35",
+    "posthog-js": "^1.242.1",
+    "posthog-node": "^4.17.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "remark-gfm": "^3.0.1",
