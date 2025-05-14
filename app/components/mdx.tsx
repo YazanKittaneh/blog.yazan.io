@@ -3,27 +3,33 @@ import Image from 'next/image'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { highlight } from 'sugar-high'
 import React from 'react'
+import remarkGfm from 'remark-gfm'
+
+
+
 
 function Table({ data }) {
   let headers = data.headers.map((header, index) => (
-    <th key={index}>{header}</th>
-  ))
+    <th key={index} className="px-4 py-2 text-left text-sm font-semibold text-gray-300 uppercase tracking-wider">{header}</th>
+  ));
   let rows = data.rows.map((row, index) => (
-    <tr key={index}>
+    <tr key={index} className={index % 2 === 0 ? "bg-gray-800" : "bg-gray-900"}>
       {row.map((cell, cellIndex) => (
-        <td key={cellIndex}>{cell}</td>
+        <td key={cellIndex} className="px-4 py-3 text-sm text-gray-300">{cell}</td>
       ))}
     </tr>
-  ))
+  ));
 
   return (
-    <table>
-      <thead>
-        <tr>{headers}</tr>
-      </thead>
-      <tbody>{rows}</tbody>
-    </table>
-  )
+    <div className="overflow-x-auto rounded-lg shadow-md">
+      <table className="min-w-full divide-y divide-gray-700">
+        <thead className="bg-gray-800">
+          <tr>{headers}</tr>
+        </thead>
+        <tbody className="divide-y divide-gray-700">{rows}</tbody>
+      </table>
+    </div>
+  );
 }
 
 function CustomLink(props) {
@@ -98,12 +104,20 @@ let components = {
   code: Code,
   Table,
 }
+const options = {
+  mdxOptions: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [],
+  },
+};
 
 export function CustomMDX(props) {
+  
   return (
     <MDXRemote
       {...props}
       components={{ ...components, ...(props.components || {}) }}
+      options={options} // Addition
     />
   )
 }
