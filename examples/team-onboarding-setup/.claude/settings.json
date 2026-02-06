@@ -1,0 +1,39 @@
+{
+  "extraKnownMarketplaces": [
+    "acme-corp/claude-plugins"
+  ],
+  "enabledPlugins": [
+    "typescript-lsp@claude-plugins-official",
+    "github-integration@claude-plugins-official",
+    "linear-integration@claude-plugins-official",
+    "acme-corp:design-system-docs@acme-corp/claude-plugins"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "scripts/session-init.sh"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/check-no-secrets.sh",
+        "matcher": "Write|Edit"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/format-and-lint.sh",
+        "matcher": "Write|Edit"
+      }
+    ],
+    "Stop": [
+      {
+        "type": "prompt",
+        "prompt": "Review the assistant's work. Did it run the test suite (pnpm test) and confirm all tests pass? If tests were not run or any test failed, reject and instruct the assistant to run the full test suite before finishing."
+      }
+    ]
+  }
+}
