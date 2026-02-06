@@ -1,0 +1,361 @@
+---
+title: 'Ship Standards, Not Wikis'
+publishedAt: '2026-02-06'
+summary: 'How to onboard engineering teams in minutes using Claude Code plugins, skills, and hooks.'
+---
+
+## Jump To
+- [The Onboarding Problem](#the-onboarding-problem)
+- [The Three Pillars](#the-three-pillars-plugins-skills-and-hooks)
+- [CLAUDE.md: The Living Standards Doc](#claudemd-the-living-standards-doc)
+- [Plugins and the Marketplace](#plugins-and-the-marketplace)
+- [Skills: Encoding Team Rituals](#skills-encoding-team-rituals)
+- [Hooks: Automated Guardrails](#hooks-automated-guardrails)
+- [Putting It All Together](#putting-it-all-together)
+
+# Ship Standards, Not Wikis
+
+Every engineering organization has a version of the same story. A new developer joins. They're handed a Confluence link, a Notion page, or a README that was last updated eighteen months ago. They spend their first week asking questions in Slack that the wiki was supposed to answer. By the time they're productive, they've absorbed the team's real standards through osmosis—watching pull requests, getting review comments, and learning which linter rules people actually care about.
+
+The standards exist. They're just trapped in people's heads instead of in the toolchain.
+
+Claude Code changes this equation. Instead of documenting your team's coding standards, rituals, and workflows in a wiki that drifts out of sync with reality, you encode them directly into the development environment. New engineers don't read about your conventions—they work inside them from their first commit.
+
+# The Three Pillars: Plugins, Skills, and Hooks
+
+Claude Code's extensibility model rests on three mechanisms that layer on top of each other:
+
+> **Plugins** bring external tools, integrations, and pre-built capabilities into Claude Code through a marketplace ecosystem. They're how you connect to your infrastructure.
+
+> **Skills** are instruction sets—committed to your repo—that teach Claude your team's specific workflows, commands, and rituals. They're how you encode tribal knowledge.
+
+> **Hooks** are lifecycle triggers that execute shell commands, prompt checks, or agent-based validations at specific points during a session. They're how you enforce standards automatically.
+
+Each addresses a different layer of the onboarding problem. Plugins set up the toolchain. Skills transfer the knowledge. Hooks enforce the rules. Together, they replace the onboarding wiki with something that actually works.
+
+# CLAUDE.md: The Living Standards Doc
+
+Before diving into the extensibility layers, it's worth starting with the foundation. `CLAUDE.md` is a markdown file at the root of your repository that Claude reads automatically at the beginning of every session. Think of it as your team's constitution—the document that establishes the baseline context for every interaction.
+
+```markdown
+# CLAUDE.md
+
+## Tech Stack
+- Next.js 14 with App Router
+- TypeScript strict mode
+- Tailwind CSS, no custom CSS files
+- Prisma ORM with PostgreSQL
+
+## Code Standards
+- All new functions must have JSDoc comments
+- Use named exports, never default exports
+- Error boundaries around every route segment
+- No console.log in production code—use the logger util
+
+## Testing
+- Unit tests with Vitest, co-located with source files
+- Integration tests in __tests__/integration/
+- Minimum 80% branch coverage on new code
+
+## Git Conventions
+- Conventional commits: feat|fix|chore|docs(scope): message
+- Squash merge to main
+- Branch naming: team/ticket-slug
+```
+
+This file is committed to version control, reviewed in PRs like any other code, and applies to every developer on the team. When someone changes the testing framework or adopts a new naming convention, the `CLAUDE.md` is updated in the same PR. The standards and the code evolve together.
+
+For monorepos, `CLAUDE.md` files cascade. A root-level file establishes shared conventions, while subdirectory files (`packages/api/CLAUDE.md`, `packages/web/CLAUDE.md`) add context specific to each package. Claude loads whichever files are relevant to the directory it's operating in.
+
+Developers can also maintain a `CLAUDE.local.md` for personal preferences—editor quirks, preferred explanation styles, aliases—that stay gitignored and never pollute the shared standards.
+
+# Plugins and the Marketplace
+
+A new developer's first day used to involve a checklist: install the right VS Code extensions, configure the linter, set up database credentials, connect to the project management tool, get access to the staging environment. Each step is another opportunity for something to go wrong, another place where the documentation might be stale.
+
+Claude Code's plugin marketplace collapses this setup into a declarative configuration. The official Anthropic marketplace (`claude-plugins-official`) ships with integrations for the tools most teams already use:
+
+- **Code intelligence plugins** for TypeScript, Python, Rust, Go, and others—giving Claude jump-to-definition, find-references, and real-time type checking
+- **External service integrations** for GitHub, Jira, Linear, Slack, Notion, Sentry, Vercel, and more
+- **Development workflow plugins** for git operations, PR review automation, and deployment
+
+But the real power is in how plugins are configured at the team level. In your project's `.claude/settings.json`, you declare which marketplaces and plugins your project requires:
+
+```json
+{
+  "extraKnownMarketplaces": [
+    "your-org/internal-claude-plugins"
+  ],
+  "enabledPlugins": [
+    "typescript-lsp@claude-plugins-official",
+    "github-integration@claude-plugins-official",
+    "linear-integration@claude-plugins-official",
+    "your-org:design-system-docs@your-org/internal-claude-plugins"
+  ]
+}
+```
+
+When a new team member clones the repo and trusts the project folder, Claude Code prompts them to install the specified plugins automatically. No checklist. No Slack messages asking which extensions to install. The environment configures itself.
+
+## Building an Internal Marketplace
+
+For organization-specific tooling, you can host your own marketplace. This is just a Git repository with a defined structure:
+
+```
+your-org/internal-claude-plugins/
+├── marketplace.json
+├── design-system-docs/
+│   ├── plugin.json
+│   └── skills/
+│       └── component-guide/
+│           └── SKILL.md
+├── deployment-pipeline/
+│   ├── plugin.json
+│   └── hooks/
+│       └── hooks.json
+└── code-review-standards/
+    ├── plugin.json
+    └── skills/
+        └── review/
+            └── SKILL.md
+```
+
+Teams register it with `/plugin marketplace add your-org/internal-claude-plugins`, and the internal tools show up in the same discovery interface as the official marketplace. This is how you distribute company-specific integrations—your design system documentation, your deployment pipeline configuration, your internal API clients—without maintaining custom tooling.
+
+# Skills: Encoding Team Rituals
+
+Every team has rituals. The way you write commit messages. The checklist you run through before opening a PR. The specific steps for deploying to staging versus production. The way you structure a new API endpoint. These rituals are rarely documented well because they're contextual, nuanced, and constantly evolving.
+
+Skills turn these rituals into executable instructions. A skill is a directory containing a `SKILL.md` file—a markdown document with YAML frontmatter that Claude loads either on demand (as a slash command) or automatically (when it determines the skill is relevant).
+
+## Example: A Deploy Skill
+
+```markdown
+---
+name: deploy
+description: Deploy to staging or production environment
+disable-model-invocation: true
+allowed-tools:
+  - Bash
+  - Read
+---
+
+# Deploy Workflow
+
+Before deploying, verify the following:
+
+1. Run the full test suite: `pnpm test`
+2. Run the type checker: `pnpm typecheck`
+3. Confirm the current branch is up to date with main
+4. Check for any pending database migrations in `prisma/migrations/`
+
+## Staging
+- Push to the `staging` branch: `git push origin HEAD:staging`
+- Monitor the deploy at https://vercel.com/your-org/your-app/deployments
+- Run smoke tests: `pnpm test:smoke --env=staging`
+
+## Production
+- Create a release tag: `git tag -a v$(date +%Y.%m.%d) -m "Release"`
+- Push with tags: `git push origin main --tags`
+- Monitor the deploy and verify health checks pass
+- Post in #releases with a summary of changes
+```
+
+A developer types `/deploy` and Claude walks through the entire ritual—running the checks, executing the commands, and verifying each step. The deployment process isn't documented in a wiki that no one reads. It's embedded in the tool the developer is already using.
+
+## Example: A New Endpoint Skill
+
+```markdown
+---
+name: new-endpoint
+description: Scaffold a new API endpoint following team conventions
+---
+
+# New API Endpoint
+
+When creating a new endpoint, follow this structure:
+
+1. Create the route handler in `src/app/api/<resource>/route.ts`
+2. Define the Zod schema in `src/schemas/<resource>.ts`
+3. Add the database query in `src/db/queries/<resource>.ts`
+4. Create the integration test in `src/__tests__/integration/<resource>.test.ts`
+5. Add the endpoint to the OpenAPI spec in `docs/api.yaml`
+
+## Route Handler Template
+Use this structure for all route handlers:
+
+- Parse and validate the request body with the Zod schema
+- Call the database query function (never write SQL in the handler)
+- Return a typed response using the `ApiResponse<T>` wrapper
+- Handle errors with the `withErrorHandler` middleware
+
+## Testing Requirements
+- Test the happy path
+- Test validation failures (malformed input)
+- Test authorization (missing or invalid token)
+- Test not-found cases for resource lookups
+```
+
+When a developer asks Claude to create a new endpoint, this skill activates automatically—Claude recognizes the intent from the description and loads the instructions. The new developer and the ten-year veteran get the same consistent structure. The convention isn't enforced through code review friction. It's built into the creation process.
+
+## Sharing Skills Across the Organization
+
+Skills live in three places, each with a different scope:
+
+| Location | Path | Scope |
+|:---------|:-----|:------|
+| Project | `.claude/skills/<name>/SKILL.md` | This repo, committed and shared |
+| Personal | `~/.claude/skills/<name>/SKILL.md` | All your repos, just you |
+| Plugin | `<plugin>/skills/<name>/SKILL.md` | Wherever the plugin is enabled |
+
+For team rituals, commit skills to the project repository. For organization-wide standards, distribute them through an internal plugin. For personal shortcuts, keep them in your home directory. The system handles namespacing automatically—a plugin skill called `deploy` becomes `your-plugin:deploy` to avoid conflicts with a project skill of the same name.
+
+# Hooks: Automated Guardrails
+
+Standards that rely on human memory don't scale. A `CLAUDE.md` that says "use conventional commits" is only as reliable as the developer's attention at commit time. This is where hooks convert suggestions into enforcement.
+
+Hooks are shell commands that execute at specific points in Claude Code's lifecycle. They can observe, modify, or block operations based on your team's rules.
+
+## The Hook Lifecycle
+
+```
+SessionStart → UserPromptSubmit → PreToolUse → [Tool Execution] → PostToolUse → Stop
+```
+
+Each event gives you a different enforcement point:
+
+**SessionStart** hooks run when a developer opens Claude Code. Use these to load context, check environment prerequisites, or initialize team-specific toolchains:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "echo '{\"message\": \"Current sprint: $(curl -s https://linear.app/api/team/sprint)\"}'"
+      }
+    ]
+  }
+}
+```
+
+**PreToolUse** hooks fire before Claude executes a tool—writing a file, running a command, making an edit. These can block dangerous operations or modify inputs:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/check-no-secrets.sh",
+        "matcher": "Write|Edit"
+      }
+    ]
+  }
+}
+```
+
+This hook runs a script before every file write or edit, checking that the content doesn't contain API keys, tokens, or other secrets. If the script exits with a non-zero code, the operation is blocked and Claude receives the error message.
+
+**PostToolUse** hooks fire after a tool succeeds. The most common use: running your formatter and linter after every file modification so that code never exists in a non-compliant state:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/format-and-lint.sh $CLAUDE_FILE_PATH",
+        "matcher": "Write|Edit"
+      }
+    ]
+  }
+}
+```
+
+**Stop** hooks fire when Claude finishes responding. Use these as quality gates—verifying that tests pass, types check, or coverage thresholds are met before a task is considered complete:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "type": "prompt",
+        "prompt": "Did the assistant run the test suite and verify all tests pass? If not, reject and ask it to run tests."
+      }
+    ]
+  }
+}
+```
+
+The `"type": "prompt"` hook is particularly interesting—instead of running a shell command, it sends the context to a fast Claude model that makes a yes/no judgment call. This lets you express guardrails in natural language rather than brittle regex patterns.
+
+## Hook Configuration for Teams
+
+Like plugins and skills, hooks can be scoped to different levels:
+
+- **Project hooks** in `.claude/settings.json`—committed, shared, team-wide
+- **Personal hooks** in `~/.claude/settings.json`—your own guardrails
+- **Enterprise hooks** in managed settings—admin-enforced, non-overridable
+
+For organizations that need strict control, the `allowManagedHooksOnly` flag disables all user, project, and plugin hooks, ensuring only administrator-approved hooks execute.
+
+# Putting It All Together
+
+Here's what a fully configured team onboarding looks like in practice. The repository contains:
+
+```
+your-project/
+├── CLAUDE.md                          # Team standards and context
+├── packages/
+│   ├── api/CLAUDE.md                  # API-specific conventions
+│   └── web/CLAUDE.md                  # Frontend-specific conventions
+├── .claude/
+│   ├── settings.json                  # Plugin config + hooks
+│   └── skills/
+│       ├── deploy/SKILL.md            # Deployment ritual
+│       ├── new-endpoint/SKILL.md      # API endpoint scaffold
+│       ├── review/SKILL.md            # PR review checklist
+│       └── incident/SKILL.md          # Incident response workflow
+└── scripts/
+    ├── format-and-lint.sh             # PostToolUse hook target
+    └── check-no-secrets.sh            # PreToolUse hook target
+```
+
+A new developer joins the team. They clone the repo, open Claude Code, and trust the project folder. Here's what happens:
+
+1. **Plugins install automatically.** The TypeScript language server, GitHub integration, and internal design system docs plugin are all prompted for installation based on `.claude/settings.json`.
+
+2. **CLAUDE.md loads.** Claude knows the tech stack, the naming conventions, the testing requirements, and the git workflow before the developer types a single character.
+
+3. **SessionStart hooks fire.** The developer's environment is checked for prerequisites. Current sprint context is loaded. Environment variables are configured.
+
+4. **The developer starts working.** They ask Claude to create a new API endpoint. The `new-endpoint` skill activates, and Claude scaffolds the route handler, schema, database query, and tests following the exact pattern the team uses.
+
+5. **PostToolUse hooks format every file** as it's written. The code is never in a non-compliant state.
+
+6. **PreToolUse hooks block secrets** from being written to files.
+
+7. **The developer types `/deploy`.** Claude walks through the entire deployment checklist—running tests, checking the branch, monitoring the deploy.
+
+8. **Stop hooks verify quality.** Tests pass. Types check. The work is done.
+
+The new developer didn't read a wiki. They didn't ask in Slack which linter config to use. They didn't accidentally use default exports because they didn't know the team uses named exports. The standards were never communicated as documentation—they were experienced as the natural behavior of the tool.
+
+## The Rollout
+
+If you're adopting this for an existing team, the practical path is incremental:
+
+**Week one:** Write your `CLAUDE.md`. Start with your tech stack, top five coding standards, and git conventions. Commit it. This alone provides significant value.
+
+**Week two:** Identify your two or three most common workflows—the things you explain to new developers most often—and encode them as skills. Commit them to `.claude/skills/`.
+
+**Week three:** Add PostToolUse hooks for formatting and linting. This removes an entire category of review comments from your pull requests.
+
+**Week four:** Evaluate the plugin marketplace for your stack. Configure the project-level plugin requirements in `.claude/settings.json`. Stand up an internal marketplace if you have organization-specific tooling.
+
+**Ongoing:** Treat your `CLAUDE.md`, skills, and hooks like production code. Review changes in PRs. Iterate based on what you learn. Remove rules that aren't useful. Add rules when you find yourself repeating the same review comments.
+
+The goal isn't to automate away engineering judgment. It's to stop wasting that judgment on things that should be automated—formatting, file structure, deployment checklists, secret detection. The more you encode into the toolchain, the more your team's attention is freed for the work that actually requires human thought: architecture decisions, product tradeoffs, and the subtle design choices that no linter will ever catch.
+
+Your coding standards shouldn't live in a document people read once and forget. They should live in the environment where the code is written. That's the difference between standards that are documented and standards that are enforced.
