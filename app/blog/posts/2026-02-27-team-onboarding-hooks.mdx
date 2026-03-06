@@ -17,13 +17,17 @@ Hooks are shell commands that execute at specific points in Claude Code's lifecy
 
 ## The Hook Lifecycle
 
+> **What this means in practice:** Hooks are automatic checks that run without the developer doing anything. When Claude opens, before it writes a file, after it finishes editing, when it completes a task—at each of these moments, your team's rules run in the background. A developer can't forget to run the linter. They can't accidentally commit a secret. The guardrails are structural, not advisory.
+
 ```
 SessionStart → UserPromptSubmit → PreToolUse → [Tool Execution] → PostToolUse → Stop
 ```
 
 Each event gives you a different enforcement point.
 
-**SessionStart** hooks run when a developer opens Claude Code. Use these to load context, check environment prerequisites, or initialize team-specific toolchains:
+**SessionStart** hooks run when a developer opens Claude Code. Use these to load context, check environment prerequisites, or initialize team-specific toolchains.
+
+> **What this does:** The moment Claude opens, it already knows what sprint the team is on, whether the developer's environment is configured correctly, and what context is relevant for today's work—without the developer asking.
 
 ```json
 {
@@ -38,7 +42,9 @@ Each event gives you a different enforcement point.
 }
 ```
 
-**PreToolUse** hooks fire before Claude executes a tool—writing a file, running a command, making an edit. These can block dangerous operations or modify inputs:
+**PreToolUse** hooks fire before Claude executes a tool—writing a file, running a command, making an edit. These can block dangerous operations or modify inputs.
+
+> **What this does:** Before Claude writes any file, it runs your secret-detection script. If an API key or token would be written to disk, the write is blocked automatically. No code review needed to catch it. The mistake never happens.
 
 ```json
 {
@@ -56,7 +62,9 @@ Each event gives you a different enforcement point.
 
 This hook runs a script before every file write or edit, checking that the content doesn't contain API keys, tokens, or other secrets. If the script exits with a non-zero code, the operation is blocked and Claude receives the error message.
 
-**PostToolUse** hooks fire after a tool succeeds. The most common use: running your formatter and linter after every file modification so that code never exists in a non-compliant state:
+**PostToolUse** hooks fire after a tool succeeds. The most common use: running your formatter and linter after every file modification so that code never exists in a non-compliant state.
+
+> **What this does:** Every time Claude edits a file, it's immediately formatted and linted. The diff in the PR is always clean. Style review comments disappear from your pull requests—not because developers remember to run the formatter, but because it runs automatically after every change.
 
 ```json
 {
@@ -72,7 +80,9 @@ This hook runs a script before every file write or edit, checking that the conte
 }
 ```
 
-**Stop** hooks fire when Claude finishes responding. Use these as quality gates—verifying that tests pass, types check, or coverage thresholds are met before a task is considered complete:
+**Stop** hooks fire when Claude finishes responding. Use these as quality gates—verifying that tests pass, types check, or coverage thresholds are met before a task is considered complete.
+
+> **What this does:** When Claude says "I'm done," a hook verifies that the tests actually pass before the session ends. If they don't, Claude is sent back to fix them. "Done" means done—not "done, but you should probably run the tests."
 
 ```json
 {

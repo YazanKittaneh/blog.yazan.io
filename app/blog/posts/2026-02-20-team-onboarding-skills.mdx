@@ -17,6 +17,8 @@ Skills turn these rituals into executable instructions. A skill is a directory c
 
 ## Example: A Deploy Skill
 
+> **What this means in practice:** A developer types `/deploy`. Claude checks that tests pass, that the branch is up to date, that there are no pending database migrations—and then executes the deploy. The developer doesn't need to remember the checklist. They don't skip steps because they're in a hurry. The ritual runs the same way every time, for every developer on the team.
+
 ```markdown
 ---
 name: deploy
@@ -51,6 +53,8 @@ Before deploying, verify the following:
 A developer types `/deploy` and Claude walks through the entire ritual—running the checks, executing the commands, and verifying each step. The deployment process isn't documented in a wiki that no one reads. It's embedded in the tool the developer is already using.
 
 ## Example: A New Endpoint Skill
+
+> **What this means in practice:** A developer—new or experienced—asks Claude to create a new API endpoint. Without being prompted, Claude follows the exact file structure your team uses: route handler here, schema there, database query in the right folder, integration test alongside it. The senior engineer's institutional knowledge about "how we structure things" is now baked into the tool, not locked in their head.
 
 ```markdown
 ---
