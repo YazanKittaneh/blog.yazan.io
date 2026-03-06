@@ -1,0 +1,68 @@
+---
+title: 'Ship Standards, Not Wikis: CLAUDE.md'
+publishedAt: '2026-02-13'
+summary: 'How a single committed markdown file gives Claude instant context about your team stack, conventions, and standards.'
+---
+
+*This is Part 2 of 8 in the Ship Standards, Not Wikis series.*
+*[← Part 1](/blog/2026-02-06-team-onboarding-wiki-problem) · [Part 3 →](/blog/2026-02-20-team-onboarding-plugins)*
+*[GitHub template →](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*
+
+---
+
+# CLAUDE.md: The Living Standards Doc
+
+`CLAUDE.md` is a markdown file at the root of your repository that Claude reads automatically at the beginning of every session. Think of it as your team's constitution—the document that establishes the baseline context for every interaction.
+
+> **What this means in practice:** A new developer clones the repo and opens Claude Code. Without being asked, Claude already knows your tech stack, your naming conventions, and your testing requirements. The developer doesn't read a setup guide—they just start working, and the right patterns are applied automatically.
+
+Here's a typical example:
+
+```markdown
+# CLAUDE.md
+
+## Tech Stack
+- Next.js 14 with App Router
+- TypeScript strict mode
+- Tailwind CSS, no custom CSS files
+- Prisma ORM with PostgreSQL
+
+## Code Standards
+- All new functions must have JSDoc comments
+- Use named exports, never default exports
+- Error boundaries around every route segment
+- No console.log in production code—use the logger util
+
+## Testing
+- Unit tests with Vitest, co-located with source files
+- Integration tests in __tests__/integration/
+- Minimum 80% branch coverage on new code
+
+## Git Conventions
+- Conventional commits: feat|fix|chore|docs(scope): message
+- Squash merge to main
+- Branch naming: team/ticket-slug
+```
+
+This file is committed to version control, reviewed in PRs like any other code, and applies to every developer on the team. When someone changes the testing framework or adopts a new naming convention, the `CLAUDE.md` is updated in the same PR. The standards and the code evolve together.
+
+## Monorepos
+
+For monorepos, `CLAUDE.md` files cascade. A root-level file establishes shared conventions, while subdirectory files (`packages/api/CLAUDE.md`, `packages/web/CLAUDE.md`) add context specific to each package. Claude loads whichever files are relevant to the directory it's operating in.
+
+## Personal Overrides
+
+Developers can also maintain a `CLAUDE.local.md` for personal preferences—editor quirks, preferred explanation styles, aliases—that stay gitignored and never pollute the shared standards.
+
+## Why It Works
+
+The difference between a `CLAUDE.md` and a wiki entry is that `CLAUDE.md` is read at the moment the developer is doing the work, not during onboarding week when it's too abstract to stick. The developer asking Claude to create a new component gets the naming convention applied automatically. They don't have to remember it.
+
+A well-written `CLAUDE.md` answers the questions that new developers ask in Slack. It describes the tech stack, the patterns that aren't obvious from the code, the rules that exist for historical reasons, and the things that would get flagged in a code review. It's a living document: when you add a review comment to a PR, consider whether that comment should be in `CLAUDE.md` instead.
+
+---
+
+*Continue reading:*
+- *[Part 3: The Plugin Marketplace](/blog/2026-02-20-team-onboarding-plugins) — self-installing toolchains*
+- *[Part 4: Building an Internal Marketplace](/blog/2026-02-27-team-onboarding-internal-marketplace)*
+- *[GitHub template](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*

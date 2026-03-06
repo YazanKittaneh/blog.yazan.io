@@ -1,0 +1,59 @@
+---
+title: 'Ship Standards, Not Wikis: Building an Internal Marketplace'
+publishedAt: '2026-02-27'
+summary: 'How to host and distribute organization-specific tooling as installable Claude Code plugins.'
+---
+
+*This is Part 4 of 8 in the Ship Standards, Not Wikis series.*
+*[← Part 3](/blog/2026-02-20-team-onboarding-plugins) · [Part 5 →](/blog/2026-03-06-team-onboarding-skills-deploy)*
+*[GitHub template →](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*
+
+---
+
+# Building an Internal Marketplace
+
+The official marketplace covers common integrations. For organization-specific tooling, you can host your own. An internal marketplace is just a Git repository with a defined structure:
+
+> **What this means in practice:** Your company's internal tools—the deployment pipeline, the design system, the incident runbook—get distributed as installable plugins, the same way you'd install a VS Code extension. Engineers on a new project get them automatically when they join. You don't maintain a separate onboarding doc explaining what to install.
+
+```
+your-org/internal-claude-plugins/
+├── marketplace.json
+├── design-system-docs/
+│   ├── plugin.json
+│   └── skills/
+│       └── component-guide/
+│           └── SKILL.md
+├── deployment-pipeline/
+│   ├── plugin.json
+│   └── hooks/
+│       └── hooks.json
+└── code-review-standards/
+    ├── plugin.json
+    └── skills/
+        └── review/
+            └── SKILL.md
+```
+
+Teams register it with `/plugin marketplace add your-org/internal-claude-plugins`, and the internal tools show up in the same discovery interface as the official marketplace.
+
+## What a Plugin Can Contain
+
+A plugin is more than just an integration—it's a bundle. Alongside the connector code, a plugin can ship:
+
+- **Skills** that teach Claude your internal workflows (the deployment checklist, the PR review standard, the incident runbook)
+- **Hooks** that enforce your rules automatically (blocking secrets from being written, running your formatter after every edit)
+- **Documentation** that Claude can reference when answering questions about your systems
+
+This means an internal plugin for your deployment pipeline can include the connection to your CI system, the skill that walks through the deploy checklist, and the hooks that block a deploy if tests haven't passed—all in one installable unit.
+
+## The Practical Effect
+
+The goal isn't to make onboarding faster for its own sake. It's to make the standards self-installing. When a developer joins and the environment configures itself, the implicit message is that these tools and integrations aren't optional—they're how this team works.
+
+---
+
+*Continue reading:*
+- *[Part 5: Skills and the Deploy Ritual](/blog/2026-03-06-team-onboarding-skills-deploy) — making tribal knowledge executable*
+- *[Part 6: Skills, Scaffolding, and Auto-Activation](/blog/2026-03-13-team-onboarding-skills-activation)*
+- *[GitHub template](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*

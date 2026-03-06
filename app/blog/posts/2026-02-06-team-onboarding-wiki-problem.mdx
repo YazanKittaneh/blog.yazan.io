@@ -1,0 +1,45 @@
+---
+title: 'Ship Standards, Not Wikis: Why Onboarding Wikis Fail'
+publishedAt: '2026-02-06'
+summary: 'Why engineering onboarding wikis go stale, and the three-layer model that replaces them.'
+---
+
+*This is Part 1 of 8 in the Ship Standards, Not Wikis series.*
+*[Part 2: CLAUDE.md →](/blog/2026-02-13-team-onboarding-claude-md)*
+*[GitHub template →](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*
+
+---
+
+# The Onboarding Problem
+
+Every engineering organization has a version of the same story. A new developer joins. They're handed a Confluence link, a Notion page, or a README that was last updated eighteen months ago. They spend their first week asking questions in Slack that the wiki was supposed to answer. By the time they're productive, they've absorbed the team's real standards through osmosis—watching pull requests, getting review comments, and learning which linter rules people actually care about.
+
+The standards exist. They're just trapped in people's heads instead of in the toolchain.
+
+Claude Code changes this equation. Instead of documenting your team's coding standards, rituals, and workflows in a wiki that drifts out of sync with reality, you encode them directly into the development environment. New engineers don't read about your conventions—they work inside them from their first commit.
+
+# The Three-Layer Model
+
+Claude Code's extensibility model rests on three mechanisms that layer on top of each other:
+
+> **CLAUDE.md** is a markdown file committed to your repository that Claude reads automatically at the start of every session. It's your team's constitution—the baseline context for every interaction.
+
+> **Skills** are instruction sets—also committed to your repo—that teach Claude your team's specific workflows, commands, and rituals. They're how you encode tribal knowledge.
+
+> **Hooks** are lifecycle triggers that execute shell commands or agent-based validations at specific points during a session. They're how you enforce standards automatically.
+
+Each addresses a different layer of the onboarding problem. CLAUDE.md sets the context. Skills transfer the knowledge. Hooks enforce the rules. Together, they replace the onboarding wiki with something that actually works.
+
+The rest of this series covers each layer in depth, starting with the foundation.
+
+---
+
+*Continue reading:*
+- *[Part 2: CLAUDE.md — Your Team's Constitution](/blog/2026-02-13-team-onboarding-claude-md)*
+- *[Part 3: The Plugin Marketplace](/blog/2026-02-20-team-onboarding-plugins)*
+- *[Part 4: Building an Internal Marketplace](/blog/2026-02-27-team-onboarding-internal-marketplace)*
+- *[Part 5: Skills and the Deploy Ritual](/blog/2026-03-06-team-onboarding-skills-deploy)*
+- *[Part 6: Skills, Scaffolding, and Auto-Activation](/blog/2026-03-13-team-onboarding-skills-activation)*
+- *[Part 7: Hooks and Automated Guardrails](/blog/2026-03-20-team-onboarding-hooks)*
+- *[Part 8: The Full Picture](/blog/2026-03-27-team-onboarding-full-picture)*
+- *[GitHub template](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*

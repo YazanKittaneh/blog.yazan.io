@@ -1,0 +1,63 @@
+---
+title: 'Ship Standards, Not Wikis: Skills and the Deploy Ritual'
+publishedAt: '2026-03-06'
+summary: 'How Claude Code skills turn your team deploy checklist into an executable slash command that runs the same way every time.'
+---
+
+*This is Part 5 of 8 in the Ship Standards, Not Wikis series.*
+*[← Part 4](/blog/2026-02-27-team-onboarding-internal-marketplace) · [Part 6 →](/blog/2026-03-13-team-onboarding-skills-activation)*
+*[GitHub template →](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*
+
+---
+
+# Skills: Encoding Team Rituals
+
+Every team has rituals. The way you write commit messages. The checklist you run through before opening a PR. The specific steps for deploying to staging versus production. These rituals are rarely documented well because they're contextual, nuanced, and constantly evolving.
+
+Skills turn these rituals into executable instructions. A skill is a directory containing a `SKILL.md` file—a markdown document with YAML frontmatter that Claude loads either on demand (as a slash command) or automatically (when it determines the skill is relevant).
+
+## Example: A Deploy Skill
+
+> **What this means in practice:** A developer types `/deploy`. Claude checks that tests pass, that the branch is up to date, that there are no pending database migrations—and then executes the deploy. The developer doesn't need to remember the checklist. They don't skip steps because they're in a hurry. The ritual runs the same way every time, for every developer on the team.
+
+```markdown
+---
+name: deploy
+description: Deploy to staging or production environment
+disable-model-invocation: true
+allowed-tools:
+  - Bash
+  - Read
+---
+
+# Deploy Workflow
+
+Before deploying, verify the following:
+
+1. Run the full test suite: `pnpm test`
+2. Run the type checker: `pnpm typecheck`
+3. Confirm the current branch is up to date with main
+4. Check for any pending database migrations in `prisma/migrations/`
+
+## Staging
+- Push to the `staging` branch: `git push origin HEAD:staging`
+- Monitor the deploy at https://vercel.com/your-org/your-app/deployments
+- Run smoke tests: `pnpm test:smoke --env=staging`
+
+## Production
+- Create a release tag: `git tag -a v$(date +%Y.%m.%d) -m "Release"`
+- Push with tags: `git push origin main --tags`
+- Monitor the deploy and verify health checks pass
+- Post in #releases with a summary of changes
+```
+
+A developer types `/deploy` and Claude walks through the entire ritual—running the checks, executing the commands, and verifying each step. The deployment process isn't documented in a wiki that no one reads. It's embedded in the tool the developer is already using.
+
+The `disable-model-invocation: true` flag tells Claude to execute the workflow directly rather than reasoning about it first. Use this for deterministic, step-by-step procedures where you don't want Claude improvising.
+
+---
+
+*Continue reading:*
+- *[Part 6: Skills, Scaffolding, and Auto-Activation](/blog/2026-03-13-team-onboarding-skills-activation) — how skills activate and where they live*
+- *[Part 7: Hooks and Automated Guardrails](/blog/2026-03-20-team-onboarding-hooks)*
+- *[GitHub template](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template) — includes four ready-to-adapt skills: deploy, new-endpoint, review, and incident*

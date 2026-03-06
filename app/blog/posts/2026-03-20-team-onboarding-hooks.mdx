@@ -1,0 +1,123 @@
+---
+title: 'Ship Standards, Not Wikis: Hooks and Automated Guardrails'
+publishedAt: '2026-03-20'
+summary: 'How Claude Code hooks enforce your team standards automatically at every point in the development lifecycle.'
+---
+
+*This is Part 7 of 8 in the Ship Standards, Not Wikis series.*
+*[← Part 6](/blog/2026-03-13-team-onboarding-skills-activation) · [Part 8 →](/blog/2026-03-27-team-onboarding-full-picture)*
+*[GitHub template →](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*
+
+---
+
+# Hooks: Automated Guardrails
+
+Standards that rely on human memory don't scale. A `CLAUDE.md` that says "use conventional commits" is only as reliable as the developer's attention at commit time. This is where hooks convert suggestions into enforcement.
+
+Hooks are shell commands that execute at specific points in Claude Code's lifecycle. They can observe, modify, or block operations based on your team's rules.
+
+## The Hook Lifecycle
+
+> **What this means in practice:** Hooks are automatic checks that run without the developer doing anything. When Claude opens, before it writes a file, after it finishes editing, when it completes a task—at each of these moments, your team's rules run in the background. A developer can't forget to run the linter. They can't accidentally commit a secret. The guardrails are structural, not advisory.
+
+```
+SessionStart → UserPromptSubmit → PreToolUse → [Tool Execution] → PostToolUse → Stop
+```
+
+## SessionStart
+
+Runs when a developer opens Claude Code. Use these to load context, check environment prerequisites, or initialize team-specific toolchains.
+
+> **What this does:** The moment Claude opens, it already knows what sprint the team is on and whether the developer's environment is configured correctly—without the developer asking.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "echo '{\"message\": \"Current sprint: $(curl -s https://linear.app/api/team/sprint)\"}'"
+      }
+    ]
+  }
+}
+```
+
+## PreToolUse
+
+Fires before Claude executes a tool—writing a file, running a command, making an edit. Can block dangerous operations or modify inputs.
+
+> **What this does:** Before Claude writes any file, it runs your secret-detection script. If an API key or token would be written to disk, the write is blocked automatically. No code review needed to catch it.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/check-no-secrets.sh",
+        "matcher": "Write|Edit"
+      }
+    ]
+  }
+}
+```
+
+If the script exits with a non-zero code, the operation is blocked and Claude receives the error message.
+
+## PostToolUse
+
+Fires after a tool succeeds. The most common use: running your formatter and linter after every file modification so that code never exists in a non-compliant state.
+
+> **What this does:** Every time Claude edits a file, it's immediately formatted and linted. The diff in the PR is always clean. Style review comments disappear from your pull requests—not because developers remember to run the formatter, but because it runs automatically after every change.
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/format-and-lint.sh $CLAUDE_FILE_PATH",
+        "matcher": "Write|Edit"
+      }
+    ]
+  }
+}
+```
+
+## Stop
+
+Fires when Claude finishes responding. Use these as quality gates—verifying that tests pass, types check, or coverage thresholds are met before a task is considered complete.
+
+> **What this does:** When Claude says "I'm done," a hook verifies that the tests actually pass before the session ends. If they don't, Claude is sent back to fix them. "Done" means done.
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "type": "prompt",
+        "prompt": "Did the assistant run the test suite and verify all tests pass? If not, reject and ask it to run tests."
+      }
+    ]
+  }
+}
+```
+
+The `"type": "prompt"` hook sends the context to a fast Claude model that makes a yes/no judgment call. This lets you express guardrails in natural language rather than brittle regex patterns.
+
+## Hook Scoping for Teams
+
+Hooks can be scoped to different levels:
+
+- **Project hooks** in `.claude/settings.json`—committed, shared, team-wide
+- **Personal hooks** in `~/.claude/settings.json`—your own guardrails
+- **Enterprise hooks** in managed settings—admin-enforced, non-overridable
+
+For organizations that need strict control, the `allowManagedHooksOnly` flag disables all user, project, and plugin hooks, ensuring only administrator-approved hooks execute.
+
+---
+
+*Continue reading:*
+- *[Part 8: The Full Picture](/blog/2026-03-27-team-onboarding-full-picture) — day-one walkthrough and four-week rollout plan*
+- *[GitHub template](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template) — including `format-and-lint.sh` and `check-no-secrets.sh` scripts*
