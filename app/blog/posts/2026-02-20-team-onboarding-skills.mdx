@@ -1,0 +1,125 @@
+---
+title: 'Ship Standards, Not Wikis: Skills'
+publishedAt: '2026-02-20'
+summary: 'How Claude Code skills turn your team rituals—deploy checklists, endpoint scaffolding, PR workflows—into executable slash commands.'
+---
+
+*This is Part 3 of a four-part series on onboarding engineering teams with Claude Code.*
+*[Part 1: The Foundation](/blog/2026-02-06-team-onboarding-claude-code) · [Part 2: Plugins and the Marketplace](/blog/2026-02-13-team-onboarding-plugins) · [Part 4: Hooks and Putting It All Together](/blog/2026-02-27-team-onboarding-hooks)*
+*[GitHub template →](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template)*
+
+---
+
+# Skills: Encoding Team Rituals
+
+Every team has rituals. The way you write commit messages. The checklist you run through before opening a PR. The specific steps for deploying to staging versus production. The way you structure a new API endpoint. These rituals are rarely documented well because they're contextual, nuanced, and constantly evolving.
+
+Skills turn these rituals into executable instructions. A skill is a directory containing a `SKILL.md` file—a markdown document with YAML frontmatter that Claude loads either on demand (as a slash command) or automatically (when it determines the skill is relevant).
+
+## Example: A Deploy Skill
+
+> **What this means in practice:** A developer types `/deploy`. Claude checks that tests pass, that the branch is up to date, that there are no pending database migrations—and then executes the deploy. The developer doesn't need to remember the checklist. They don't skip steps because they're in a hurry. The ritual runs the same way every time, for every developer on the team.
+
+```markdown
+---
+name: deploy
+description: Deploy to staging or production environment
+disable-model-invocation: true
+allowed-tools:
+  - Bash
+  - Read
+---
+
+# Deploy Workflow
+
+Before deploying, verify the following:
+
+1. Run the full test suite: `pnpm test`
+2. Run the type checker: `pnpm typecheck`
+3. Confirm the current branch is up to date with main
+4. Check for any pending database migrations in `prisma/migrations/`
+
+## Staging
+- Push to the `staging` branch: `git push origin HEAD:staging`
+- Monitor the deploy at https://vercel.com/your-org/your-app/deployments
+- Run smoke tests: `pnpm test:smoke --env=staging`
+
+## Production
+- Create a release tag: `git tag -a v$(date +%Y.%m.%d) -m "Release"`
+- Push with tags: `git push origin main --tags`
+- Monitor the deploy and verify health checks pass
+- Post in #releases with a summary of changes
+```
+
+A developer types `/deploy` and Claude walks through the entire ritual—running the checks, executing the commands, and verifying each step. The deployment process isn't documented in a wiki that no one reads. It's embedded in the tool the developer is already using.
+
+## Example: A New Endpoint Skill
+
+> **What this means in practice:** A developer—new or experienced—asks Claude to create a new API endpoint. Without being prompted, Claude follows the exact file structure your team uses: route handler here, schema there, database query in the right folder, integration test alongside it. The senior engineer's institutional knowledge about "how we structure things" is now baked into the tool, not locked in their head.
+
+```markdown
+---
+name: new-endpoint
+description: Scaffold a new API endpoint following team conventions
+---
+
+# New API Endpoint
+
+When creating a new endpoint, follow this structure:
+
+1. Create the route handler in `src/app/api/<resource>/route.ts`
+2. Define the Zod schema in `src/schemas/<resource>.ts`
+3. Add the database query in `src/db/queries/<resource>.ts`
+4. Create the integration test in `src/__tests__/integration/<resource>.test.ts`
+5. Add the endpoint to the OpenAPI spec in `docs/api.yaml`
+
+## Route Handler Template
+Use this structure for all route handlers:
+
+- Parse and validate the request body with the Zod schema
+- Call the database query function (never write SQL in the handler)
+- Return a typed response using the `ApiResponse<T>` wrapper
+- Handle errors with the `withErrorHandler` middleware
+
+## Testing Requirements
+- Test the happy path
+- Test validation failures (malformed input)
+- Test authorization (missing or invalid token)
+- Test not-found cases for resource lookups
+```
+
+When a developer asks Claude to create a new endpoint, this skill activates automatically—Claude recognizes the intent from the description and loads the instructions. The new developer and the ten-year veteran get the same consistent structure. The convention isn't enforced through code review friction. It's built into the creation process.
+
+## Automatic vs. On-Demand Activation
+
+Skills activate in two ways:
+
+**On demand** — the developer types a slash command like `/deploy` or `/new-endpoint`. Claude loads the skill and executes the workflow.
+
+**Automatically** — Claude reads the `description` field of every available skill. If the developer's request matches a skill's purpose, Claude loads it without being explicitly asked. A request to "create a new API endpoint" triggers the `new-endpoint` skill. A request to "push this to staging" triggers the `deploy` skill.
+
+The `disable-model-invocation: true` flag in the deploy skill above tells Claude to execute the workflow directly rather than reasoning about it first. Use this for deterministic, step-by-step procedures where you don't want Claude improvising.
+
+## Where Skills Live
+
+Skills can be scoped to different levels:
+
+| Location | Path | Scope |
+|:---------|:-----|:------|
+| Project | `.claude/skills/<name>/SKILL.md` | This repo, committed and shared |
+| Personal | `~/.claude/skills/<name>/SKILL.md` | All your repos, just you |
+| Plugin | `<plugin>/skills/<name>/SKILL.md` | Wherever the plugin is enabled |
+
+For team rituals, commit skills to the project repository. For organization-wide standards, distribute them through an internal plugin. For personal shortcuts, keep them in your home directory. The system handles namespacing automatically—a plugin skill called `deploy` becomes `your-plugin:deploy` to avoid conflicts with a project skill of the same name.
+
+## What to Encode as Skills
+
+The highest-value candidates are workflows you explain to new developers more than once. If you've written the same Slack message three times walking someone through the deploy process, that's a skill. If every PR triggers the same five review comments about missing tests or wrong file structure, the convention that generates those comments belongs in a skill.
+
+Start with two or three. The goal at first is getting the institutional knowledge out of Slack threads and into the repo, where it's versioned, reviewable, and available to Claude at the moment the developer needs it.
+
+---
+
+*Continue reading:*
+- *[Part 4: Hooks and Putting It All Together](/blog/2026-02-27-team-onboarding-hooks) — automated guardrails and the full rollout*
+- *[GitHub template](https://github.com/YazanKittaneh/blog.yazan.io/tree/main/template) — four ready-to-adapt skills: deploy, new-endpoint, review, and incident*

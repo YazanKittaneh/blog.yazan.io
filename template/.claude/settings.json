@@ -1,0 +1,38 @@
+{
+  "extraKnownMarketplaces": [
+    "your-org/internal-claude-plugins"
+  ],
+  "enabledPlugins": [
+    "typescript-lsp@claude-plugins-official",
+    "github-integration@claude-plugins-official",
+    "linear-integration@claude-plugins-official"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "node scripts/session-start.js"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/check-no-secrets.sh",
+        "matcher": "Write|Edit"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/format-and-lint.sh $CLAUDE_FILE_PATH",
+        "matcher": "Write|Edit"
+      }
+    ],
+    "Stop": [
+      {
+        "type": "prompt",
+        "prompt": "Did the assistant run the test suite and verify all tests pass? If not, reject and ask it to run tests."
+      }
+    ]
+  }
+}
