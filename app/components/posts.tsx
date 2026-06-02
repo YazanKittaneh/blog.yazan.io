@@ -11,7 +11,7 @@ function TypePill({ type }: { type: 'essay' | 'prompt' }) {
           ? {
               backgroundColor: 'oklch(0.63 0.24 35 / 0.12)',
               color: 'var(--primary)',
-              borderColor: 'oklch(0.63 0.24 35 / 0.3)',
+              borderColor: 'oklch(0.63 0.24 35 / 0.01)',
             }
           : {
               backgroundColor: 'oklch(0.55 0 0 / 0.08)',
